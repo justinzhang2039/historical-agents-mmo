@@ -24,7 +24,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/justin/historical-agents-mmo.git
+git clone https://github.com/justinzhang2039/historical-agents-mmo.git
 cd historical-agents-mmo
 
 # 安装依赖
