@@ -459,8 +459,10 @@ class HistoricalAgentsMMO {
     // 通知 Agent 结果
     agent.send({
       type: 'action_result',
-      action,
-      result
+      data: {
+        action,
+        result
+      }
     });
   }
 

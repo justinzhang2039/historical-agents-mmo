@@ -106,31 +106,60 @@ class HistoricalAgentClient {
    */
   handleMessage(message) {
     switch (message.type) {
-      case 'init':
+      case 'init': {
         console.log('Game world initialized');
+        if (!message.data?.world?.nodes) {
+          console.warn('Invalid init message: missing data.world.nodes');
+          break;
+        }
         this.state.location = message.data.world.nodes[this.state.location];
         break;
-        
-      case 'tick_update':
-        // 世界 tick 更新
-        this.state.location = message.data.world.nodes[this.state.location?.id];
+      }
+
+      case 'tick_update': {
+        // 世界 tick 更新（兼容 data.world 与 world 两种格式）
+        const world = message.data?.world || message.world;
+        if (!world?.nodes) {
+          console.warn('Invalid tick_update message: missing world.nodes');
+          break;
+        }
+        this.state.location = world.nodes[this.state.location?.id];
         break;
-        
-      case 'decision_request':
+      }
+
+      case 'decision_request': {
         // 服务器请求决策
-        const action = this.decideAction(message.data.context);
+        const context = message.data?.context;
+        if (!context) {
+          console.warn('Invalid decision_request message: missing data.context');
+          break;
+        }
+        const action = this.decideAction(context);
         this.executeAction(action);
         break;
-        
-      case 'action_result':
-        console.log('Action result:', message.data.result.message);
-        this.state.lastAction = message.data;
+      }
+
+      case 'action_result': {
+        const action = message.data?.action;
+        const result = message.data?.result;
+        if (!action || !result) {
+          console.warn('Invalid action_result message: missing data.action or data.result');
+          break;
+        }
+        console.log('Action result:', result.message);
+        this.state.lastAction = { action, result };
         break;
-        
-      case 'world_event':
+      }
+
+      case 'world_event': {
+        if (!message.data) {
+          console.warn('Invalid world_event message: missing data');
+          break;
+        }
         console.log('World event:', message.data.name, '-', message.data.description);
         this.handleEvent(message.data);
         break;
+      }
     }
   }
 

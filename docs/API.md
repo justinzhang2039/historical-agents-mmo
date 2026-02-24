@@ -125,7 +125,33 @@ Content-Type: application/json
 
 连接: `ws://localhost:4567`
 
-### 消息类型
+### 协议约定
+
+- 所有消息都包含 `type` 字段。
+- 事件负载优先放在 `data` 字段中；历史兼容消息（如 `tick_update`）可能仍使用顶层字段。
+- 客户端应在读取字段前进行校验，缺失时打印 warning 并跳过处理。
+
+### 客户端 -> 服务器
+
+#### Agent 连接
+```json
+{
+  "type": "agent_connect",
+  "agentId": "agent-xxx"
+}
+```
+
+#### Agent 提交行动
+```json
+{
+  "type": "agent_action",
+  "action": {
+    "type": "gather",
+    "target": "food",
+    "params": { "amount": 200 }
+  }
+}
+```
 
 #### 观察者连接
 ```json
@@ -143,16 +169,52 @@ Content-Type: application/json
 }
 ```
 
-### 服务器推送
+### 服务器 -> 客户端
 
-#### 世界更新
+#### 初始化
+```json
+{
+  "type": "init",
+  "data": {
+    "world": { "nodes": {} },
+    "agents": [],
+    "tick": 1
+  }
+}
+```
+
+#### 请求 Agent 决策
+```json
+{
+  "type": "decision_request",
+  "data": {
+    "context": {
+      "location": { "id": "xuchang", "connections": ["luoyang"] },
+      "resources": { "food": 120, "gold": 50, "soldiers": 200, "reputation": 0 },
+      "suggestions": []
+    }
+  }
+}
+```
+
+#### Agent 行动结果
+```json
+{
+  "type": "action_result",
+  "data": {
+    "action": { "type": "gather", "target": "food" },
+    "result": { "success": true, "message": "采集成功" }
+  }
+}
+```
+
+#### 世界更新（当前版本为顶层字段）
 ```json
 {
   "type": "tick_update",
   "tick": 100,
-  "world": { ... },
-  "agents": [ ... ],
-  "battles": [ ... ]
+  "world": { "nodes": {} },
+  "battles": []
 }
 ```
 
