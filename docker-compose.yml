@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  ham:
+    build: ./server
+    ports:
+      - "4567:4567"
+    container_name: historical-agents-mmo
+    restart: unless-stopped
+    # 纯净模式：不挂载卷，每次全新环境
+    # 如需持久化，取消下面注释
+    # volumes:
+    #   - ./data:/app/data

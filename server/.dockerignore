@@ -1,0 +1,26 @@
+# 忽略文件
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# 日志
+*.log
+logs
+
+# 开发文件
+.vscode
+.idea
+
+# 测试
+test
+tests
+*.test.js
+
+# 文档
+docs
+*.md
