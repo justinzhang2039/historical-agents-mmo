@@ -246,10 +246,12 @@ class AgentManager {
       if (agent.ws && agent.status === 'idle') {
         agent.send({
           type: 'decision_request',
-          context: {
-            location: world.getNode(agent.location),
-            resources: agent.resources,
-            suggestions: agent.suggestions
+          data: {
+            context: {
+              location: world.getNode(agent.location),
+              resources: agent.resources,
+              suggestions: agent.suggestions
+            }
           }
         });
       }
