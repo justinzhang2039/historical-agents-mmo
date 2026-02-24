@@ -15,6 +15,7 @@ const { AgentManager } = require('./agent-manager');
 const EventEngine = require('./event-engine');
 const CombatSystem = require('./combat-system');
 const DiplomacySystem = require('./diplomacy-system');
+const AgentRegistrationSystem = require('./registration-system');
 
 class HistoricalAgentsMMO {
   constructor(config = {}) {
@@ -31,6 +32,7 @@ class HistoricalAgentsMMO {
     this.events = new EventEngine();
     this.combat = new CombatSystem(this.world);
     this.diplomacy = new DiplomacySystem(this.world, this.agents);
+    this.registration = new AgentRegistrationSystem();
     
     // 观察者（人类玩家）
     this.observers = new Map();
@@ -46,6 +48,9 @@ class HistoricalAgentsMMO {
     // 静态文件（Dashboard v2）
     this.app.use('/', express.static(path.join(__dirname, '../../dashboard/v2')));
     this.app.use('/dashboard', express.static(path.join(__dirname, '../../dashboard/v2')));
+    
+    // 认领页面
+    this.app.use('/claim', express.static(path.join(__dirname, '../../dashboard/claim.html')));
     
     // 获取可用历史时期
     this.app.get('/api/eras', (req, res) => {
@@ -103,10 +108,81 @@ class HistoricalAgentsMMO {
         data: this.agents.getAllPublicInfo()
       });
     });
-    
+
+    // ===== 注册与认领系统 API =====
+
+    // 注册新 Agent
+    this.app.post('/api/agents/register', (req, res) => {
+      try {
+        const result = this.registration.register(req.body);
+        res.json(result);
+      } catch (e) {
+        res.status(400).json({ success: false, error: e.message });
+      }
+    });
+
+    // 获取 Agent 信息（用于认领页面）
+    this.app.get('/api/agents/:id', (req, res) => {
+      const status = this.registration.getStatus(req.params.id);
+      if (status.success) {
+        res.json(status);
+      } else {
+        //  fallback 到游戏内 Agent
+        const agent = this.agents.get(req.params.id);
+        if (agent) {
+          res.json({ success: true, data: agent.getPublicInfo() });
+        } else {
+          res.status(404).json({ success: false, error: 'Agent not found' });
+        }
+      }
+    });
+
+    // 认领 Agent
+    this.app.post('/api/agents/:id/claim', (req, res) => {
+      try {
+        const result = this.registration.claim(req.params.id, req.body);
+        res.json(result);
+      } catch (e) {
+        res.status(400).json({ success: false, error: e.message });
+      }
+    });
+
+    // 验证 API key
+    this.app.get('/api/agents/me', (req, res) => {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey) {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const agent = this.registration.verifyApiKey(apiKey);
+      if (!agent) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      res.json({ success: true, data: agent });
+    });
+
+    // 列出待认领的 Agent
+    this.app.get('/api/agents/pending', (req, res) => {
+      res.json({
+        success: true,
+        data: this.registration.getPendingAgents()
+      });
+    });
+
+    // 列出已认领的 Agent
+    this.app.get('/api/agents/claimed', (req, res) => {
+      res.json({
+        success: true,
+        data: this.registration.getClaimedAgents()
+      });
+    });
+
     // 获取 Agent 关系
     this.app.get('/api/agents/:id/relations', (req, res) => {
       const relations = this.diplomacy.getAgentRelations(req.params.id);
+      res.json({ success: true, data: relations });
+    });
       res.json({ success: true, data: relations });
     });
 
