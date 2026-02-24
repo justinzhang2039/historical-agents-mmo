@@ -183,8 +183,6 @@ class HistoricalAgentsMMO {
       const relations = this.diplomacy.getAgentRelations(req.params.id);
       res.json({ success: true, data: relations });
     });
-      res.json({ success: true, data: relations });
-    });
 
     // ===== 外交系统 API =====
 
