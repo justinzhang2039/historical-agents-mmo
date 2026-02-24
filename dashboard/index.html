@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Agents MMO - 观察者界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 30px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #ffd700, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #51cf66;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            border-bottom: 1px solid #2a2a4a;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+        }
+        
+        .panel-content {
+            padding: 20px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        /* Agent 列表 */
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .agent-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .agent-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(4px);
+        }
+        
+        .agent-card.active {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .agent-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .agent-location {
+            font-size: 13px;
+            color: #888;
+        }
+        
+        .agent-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        /* 地图区域 */
+        .map-container {
+            position: relative;
+            min-height: 500px;
+            background: radial-gradient(ellipse at center, #1a1a3e 0%, #0f0f1e 100%);
+            border-radius: 8px;
+        }
+        
+        .map-node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid;
+        }
+        
+        .map-node:hover {
+            transform: scale(1.1);
+        }
+        
+        .map-node.caocao { border-color: #3498db; background: rgba(52, 152, 219, 0.2); }
+        .map-node.sunjian { border-color: #e74c3c; background: rgba(231, 76, 60, 0.2); }
+        .map-node.liubei { border-color: #27ae60; background: rgba(39, 174, 96, 0.2); }
+        .map-node.neutral { border-color: #666; background: rgba(102, 102, 102, 0.2); }
+        
+        .node-name {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .node-agents {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+        
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: #2a2a4a;
+            transform-origin: left center;
+        }
+        
+        /* 事件流 */
+        .event-stream {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .event-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid;
+            font-size: 13px;
+        }
+        
+        .event-item.natural { border-left-color: #3498db; }
+        .event-item.political { border-left-color: #e74c3c; }
+        .event-item.opportunity { border-left-color: #27ae60; }
+        
+        .event-time {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .event-title {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        
+        .event-desc {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        /* 选中 Agent 详情 */
+        .agent-detail {
+            display: none;
+        }
+        
+        .agent-detail.active {
+            display: block;
+        }
+        
+        .detail-section {
+            margin-bottom: 20px;
+        }
+        
+        .detail-title {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-bar {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        .stat-bar-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        
+        .stat-bar-value {
+            height: 4px;
+            background: #2a2a4a;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ff6b6b);
+            transition: width 0.3s;
+        }
+        
+        /* 建议输入 */
+        .suggestion-box {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a4a;
+        }
+        
+        .suggestion-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a2a4a;
+            border-radius: 6px;
+            padding: 10px;
+            color: #fff;
+            font-size: 13px;
+            resize: none;
+        }
+        
+        .suggestion-input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        
+        .suggestion-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, #ffd700, #ff6b6b);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .suggestion-btn:hover {
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ Historical Agents MMO - 观察者界面</h1>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span id="connection-status">已连接</span>
+            <span style="margin: 0 10px;">|</span>
+            <span>Tick: <span id="tick">0</span></span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 左侧：Agent 列表 -->
+        <div class="panel">
+            <div class="panel-header">🎭 历史人物</div>
+            <div class="panel-content">
+                <div class="agent-list" id="agent-list">
+                    <!-- Agent 卡片将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 中间：地图 -->
+        <div class="panel">
+            <div class="panel-header">🗺️ 三国地图</div>
+            <div class="panel-content">
+                <div class="map-container" id="map">
+                    <!-- 地图节点将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：事件流 + Agent 详情 -->
+        <div class="panel">
+            <div class="panel-header" id="right-panel-title">📜 世界事件</div>
+            <div class="panel-content">
+                <!-- 事件流 -->
+                <div class="event-stream" id="event-stream">
+                    <!-- 事件将在这里动态生成 -->
+                </div>
+                
+                <!-- Agent 详情（选中时显示） -->
+                <div class="agent-detail" id="agent-detail">
+                    <div class="detail-section">
+                        <div class="detail-title">五维属性</div>
+                        <div class="stats-grid" id="stats-grid">
+                            <!-- 属性条将在这里生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <div class="detail-title">资源</div>
+                        <div id="resources">
+                            <!-- 资源将在这里显示 -->
+                        </div>
+                    </div>
+                    
+                    <div class="suggestion-box">
+                        <div class="detail-title">💡 下达建议</div>
+                        <textarea class="suggestion-input" id="suggestion-input" 
+                            placeholder="输入建议，例如：建议前往洛阳发展..." rows="3"></textarea>
+                        <button class="suggestion-btn" onclick="sendSuggestion()">发送建议</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 配置
+        const API_URL = window.location.origin;
+        const WS_URL = `ws://${window.location.host}`;
+        
+        // 状态
+        let ws = null;
+        let selectedAgent = null;
+        let agents = [];
+        let world = null;
+        
+        // 地图节点位置（百分比）
+        const nodePositions = {
+            'xuchang': { x: 50, y: 30 },
+            'luoyang': { x: 40, y: 20 },
+            'xuzhou': { x: 70, y: 35 },
+            'shouchun': { x: 65, y: 50 },
+            'changsan': { x: 25, y: 60 }
+        };
+        
+        // 连接 WebSocket
+        function connect() {
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                console.log('Connected to game server');
+                document.getElementById('connection-status').textContent = '已连接';
+                
+                // 注册为观察者
+                ws.send(JSON.stringify({ type: 'observer_connect' }));
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleMessage(message);
+            };
+            
+            ws.onclose = () => {
+                console.log('Disconnected, reconnecting...');
+                document.getElementById('connection-status').textContent = '重连中...';
+                setTimeout(connect, 3000);
+            };
+            
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+        }
+        
+        // 处理消息
+        function handleMessage(message) {
+            switch (message.type) {
+                case 'init':
+                case 'tick_update':
+                    updateWorld(message.data);
+                    break;
+                case 'world_event':
+                    addEvent(message.data);
+                    break;
+                case 'observer_welcome':
+                    console.log('Observer registered:', message.message);
+                    break;
+            }
+        }
+        
+        // 更新世界状态
+        function updateWorld(data) {
+            if (data.tick) {
+                document.getElementById('tick').textContent = data.tick;
+            }
+            
+            if (data.world) {
+                world = data.world;
+                renderMap();
+            }
+            
+            if (data.agents) {
+                agents = data.agents;
+                renderAgentList();
+                if (selectedAgent) {
+                    updateAgentDetail();
+                }
+            }
+        }
+        
+        // 渲染 Agent 列表
+        function renderAgentList() {
+            const container = document.getElementById('agent-list');
+            container.innerHTML = agents.map(agent => `
+                <div class="agent-card ${selectedAgent?.id === agent.id ? 'active' : ''}" 
+                     onclick="selectAgent('${agent.id}')">
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-location">📍 ${getLocationName(agent.location)}</div>
+                    <div class="agent-stats">
+                        <div class="stat">
+                            <span class="stat-label">Lv.</span>
+                            <span class="stat-value">${agent.level}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">武力</span>
+                            <span class="stat-value">${agent.stats.strength}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">智力</span>
+                            <span class="stat-value">${agent.stats.intelligence}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 渲染地图
+        function renderMap() {
+            const container = document.getElementById('map');
+            
+            // 清空并重新渲染
+            container.innerHTML = '';
+            
+            // 绘制连接线
+            const nodes = world?.nodes || {};
+            for (const [nodeId, node] of Object.entries(nodes)) {
+                if (node.connections) {
+                    for (const connId of node.connections) {
+                        drawConnection(nodeId, connId);
+                    }
+                }
+            }
+            
+            // 绘制节点
+            for (const [nodeId, node] of Object.entries(nodes)) {
+                const pos = nodePositions[nodeId];
+                if (!pos) continue;
+                
+                const faction = node.controller || 'neutral';
+                const agentCount = node.agents?.length || 0;
+                
+                const nodeEl = document.createElement('div');
+                nodeEl.className = `map-node ${faction}`;
+                nodeEl.style.left = `${pos.x}%`;
+                nodeEl.style.top = `${pos.y}%`;
+                nodeEl.style.transform = 'translate(-50%, -50%)';
+                nodeEl.innerHTML = `
+                    <div class="node-name">${node.name}</div>
+                    <div class="node-agents">${agentCount} 位 Agent</div>
+                `;
+                
+                container.appendChild(nodeEl);
+            }
+        }
+        
+        // 绘制连接线
+        function drawConnection(from, to) {
+            const fromPos = nodePositions[from];
+            const toPos = nodePositions[to];
+            if (!fromPos || !toPos) return;
+            
+            const container = document.getElementById('map');
+            const line = document.createElement('div');
+            line.className = 'connection';
+            
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            line.style.width = `${length}%`;
+            line.style.left = `${fromPos.x}%`;
+            line.style.top = `${fromPos.y}%`;
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            container.appendChild(line);
+        }
+        
+        // 选择 Agent
+        function selectAgent(agentId) {
+            selectedAgent = agents.find(a => a.id === agentId);
+            renderAgentList();
+            
+            if (selectedAgent) {
+                document.getElementById('agent-detail').classList.add('active');
+                document.getElementById('right-panel-title').textContent = 
+                    `📋 ${selectedAgent.name}`;
+                updateAgentDetail();
+            }
+        }
+        
+        // 更新 Agent 详情
+        function updateAgentDetail() {
+            if (!selectedAgent) return;
+            
+            // 渲染属性条
+            const statsGrid = document.getElementById('stats-grid');
+            const stats = [
+                { key: 'strength', label: '武力', value: selectedAgent.stats.strength },
+                { key: 'intelligence', label: '智力', value: selectedAgent.stats.intelligence },
+                { key: 'charisma', label: '魅力', value: selectedAgent.stats.charisma },
+                { key: 'politics', label: '政治', value: selectedAgent.stats.politics },
+                { key: 'luck', label: '运气', value: selectedAgent.stats.luck }
+            ];
+            
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-bar">
+                    <div class="stat-bar-label">${stat.label} ${stat.value}</div>
+                    <div class="stat-bar-value">
+                        <div class="stat-bar-fill" style="width: ${stat.value}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 添加事件
+        function addEvent(event) {
+            const container = document.getElementById('event-stream');
+            const eventEl = document.createElement('div');
+            eventEl.className = `event-item ${event.type}`;
+            eventEl.innerHTML = `
+                <div class="event-time">Tick ${event.tick}</div>
+                <div class="event-title">${event.name}</div>
+                <div class="event-desc">${event.description}</div>
+            `;
+            
+            container.insertBefore(eventEl, container.firstChild);
+            
+            // 限制事件数量
+            while (container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        // 发送建议
+        function sendSuggestion() {
+            if (!selectedAgent) {
+                alert('请先选择一个 Agent');
+                return;
+            }
+            
+            const input = document.getElementById('suggestion-input');
+            const suggestion = input.value.trim();
+            
+            if (!suggestion) return;
+            
+            ws.send(JSON.stringify({
+                type: 'observer_command',
+                agentId: selectedAgent.id,
+                suggestion: suggestion
+            }));
+            
+            input.value = '';
+            alert('建议已发送！');
+        }
+        
+        // 获取地点名称
+        function getLocationName(locationId) {
+            const names = {
+                'xuchang': '许昌',
+                'luoyang': '洛阳',
+                'xuzhou': '徐州',
+                'shouchun': '寿春',
+                'changsan': '长沙'
+            };
+            return names[locationId] || locationId;
+        }
+        
+        // 初始化
+        connect();
+        
+        // 定期获取事件
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/events?limit=10`);
+                const data = await res.json();
+                if (data.success) {
+                    const container = document.getElementById('event-stream');
+                    if (container.children.length === 0) {
+                        data.data.forEach(event => addEvent(event));
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch events:', e);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

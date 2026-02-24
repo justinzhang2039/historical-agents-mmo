@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Agents MMO - 观察者的视界</title>
+    <!-- 引入字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #22222e;
+            --border-color: #2a2a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --accent-gold: #ffd700;
+            --accent-blue: #4a9eff;
+            --accent-red: #ff4757;
+            --accent-green: #2ed573;
+            --accent-purple: #a55eea;
+            --font-mono: 'SF Mono', Monaco, monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 星空背景动画 */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* 顶部导航 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-gold), #ff6b35);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+
+        .nav-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+
+        .nav-stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        /* 主布局 */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1px;
+            background: var(--border-color);
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 面板标题 */
+        .panel-header {
+            padding: 16px 20px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-icon {
+            font-size: 16px;
+        }
+
+        /* 左侧面板 - Agent 列表 */
+        .agent-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .era-selector {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .era-selector select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .agent-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateX(4px);
+        }
+
+        .agent-card.active {
+            border-color: var(--accent-gold);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent);
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent-gold);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .agent-card.active::before,
+        .agent-card:hover::before {
+            opacity: 1;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .agent-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .agent-info .location {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .agent-stats-row {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .agent-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+        }
+
+        .agent-stat-value {
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        /* 中间面板 - 地图 */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+            overflow: hidden;
+        }
+
+        .map-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .map-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+
+        .node-core {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .node-core:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .node-core.caocao { border-color: #3498db; }
+        .node-core.sunjian { border-color: #e74c3c; }
+        .node-core.liubei { border-color: #27ae60; }
+        .node-core.qin { border-color: #2c3e50; }
+        .node-core.zhao { border-color: #e74c3c; }
+        .node-core.qi { border-color: #3498db; }
+        .node-core.chu { border-color: #27ae60; }
+
+        .node-name {
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .node-agents {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .node-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            animation: nodePulse 2s infinite;
+            opacity: 0;
+        }
+
+        @keyframes nodePulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--border-color), var(--accent-gold), var(--border-color));
+            opacity: 0.3;
+            transform-origin: left center;
+        }
+
+        /* 右侧面板 - 活动流 */
+        .activity-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .activity-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .activity-item.move::before { background: var(--accent-blue); }
+        .activity-item.battle::before { background: var(--accent-red); }
+        .activity-item.trade::before { background: var(--accent-green); }
+        .activity-item.diplomacy::before { background: var(--accent-purple); }
+        .activity-item.event::before { background: var(--accent-gold); }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .activity-content {
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .activity-content strong {
+            color: var(--accent-gold);
+        }
+
+        /* 底部命令栏 */
+        .command-bar {
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .command-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .command-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .command-input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .command-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .command-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-gold), #ff6b35);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .command-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* 选中 Agent 详情浮层 */
+        .agent-detail-panel {
+            position: fixed;
+            right: 340px;
+            top: 80px;
+            width: 300px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 50;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .agent-detail-panel.show {
+            display: block;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .detail-title h2 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .detail-title .faction {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: var(--bg-tertiary);
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-bar {
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold), #ff6b35);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .stat-value {
+            font-size: 12px;
+            color: var(--text-primary);
+            margin-top: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .log-section {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .log-entry {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 240px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            
+            .panel {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空背景 -->
+    <div class="stars" id="stars"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">🏛️</div>
+            <div class="logo-text">Historical Agents MMO</div>
+        </div>
+        
+        <div class="nav-stats">
+            <div class="nav-stat">
+                <span class="status-indicator"></span>
+                <span>在线</span>
+            </div>
+            <div class="nav-stat">
+                <span>Tick:</span>
+                <span class="nav-stat-value" id="tick">0</span>
+            </div>
+            <div class="nav-stat">
+                <span>Agent:</span>
+                <span class="nav-stat-value" id="agent-count">0</span>
+            </div>
+            <div class="nav-stat">
+                <span>战斗:</span>
+                <span class="nav-stat-value" id="battle-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧面板 - Agent 列表 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">🎭</span>
+                    历史人物
+                </div>
+            </div>
+            
+            <div class="era-selector">
+                <select id="era-select" onchange="switchEra()">
+                    <option value="sanguo">🏯 三国 (220-280 AD)</option>
+                    <option value="zhanguo">⚔️ 战国 (475-221 BC)</option>
+                    <option value="chuhan">👑 楚汉 (206-202 BC)</option>
+                </select>
+            </div>
+            
+            <div class="agent-list" id="agent-list">
+                <!-- Agent 卡片将在这里生成 -->
+            </div>
+        </div>
+
+        <!-- 中间面板 - 地图 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">🗺️</span>
+                    <span id="map-title">三国地图</span>
+                </div>
+            </div>
+            
+            <div class="map-container" id="map-container">
+                <div class="map-grid"></div>
+                <!-- 地图节点将在这里生成 -->
+            </div>
+        </div>
+
+        <!-- 右侧面板 - 活动流 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">📜</span>
+                    世界活动
+                </div>
+            </div>
+            
+            <div class="activity-stream" id="activity-stream">
+                <!-- 活动将在这里生成 -->
+            </div>
+            
+            <div class="command-bar">
+                <div class="command-input-wrapper">
+                    <input type="text" 
+                           class="command-input" 
+                           id="command-input"
+                           placeholder="输入命令，例如：建议曹操前往洛阳..."
+                           onkeypress="handleKeyPress(event)">
+                    <button class="command-btn" onclick="sendCommand()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent 详情浮层 -->
+    <div class="agent-detail-panel" id="agent-detail">
+        <!-- 详情内容将在这里生成 -->
+    </div>
+
+    <script>
+        // 配置
+        const API_URL = window.location.origin;
+        
+        // 状态
+        let ws = null;
+        let selectedAgent = null;
+        let agents = [];
+        let world = null;
+        let currentEra = 'sanguo';
+
+        // 初始化星空
+        function initStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // 连接 WebSocket
+        function connect() {
+            const wsUrl = `ws://${window.location.host}`;
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('Connected');
+                ws.send(JSON.stringify({ type: 'observer_connect' }));
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleMessage(message);
+            };
+            
+            ws.onclose = () => {
+                setTimeout(connect, 3000);
+            };
+        }
+
+        // 处理消息
+        function handleMessage(message) {
+            switch (message.type) {
+                case 'init':
+                case 'tick_update':
+                    updateWorld(message.data);
+                    break;
+                case 'world_event':
+                    addActivity('event', message.data);
+                    break;
+                case 'battle_round':
+                    addActivity('battle', message.data);
+                    break;
+            }
+        }
+
+        // 更新世界
+        function updateWorld(data) {
+            if (data.tick) {
+                document.getElementById('tick').textContent = data.tick;
+            }
+            
+            if (data.agents) {
+                agents = data.agents;
+                document.getElementById('agent-count').textContent = agents.length;
+                renderAgentList();
+            }
+            
+            if (data.battles) {
+                document.getElementById('battle-count').textContent = data.battles.length;
+            }
+            
+            if (data.world) {
+                world = data.world;
+                if (world.era && world.era.id !== currentEra) {
+                    currentEra = world.era.id;
+                    document.getElementById('era-select').value = currentEra;
+                    document.getElementById('map-title').textContent = world.era.name + '地图';
+                }
+                renderMap();
+            }
+        }
+
+        // 渲染 Agent 列表
+        function renderAgentList() {
+            const container = document.getElementById('agent-list');
+            
+            if (agents.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">暂无 Agent</div>';
+                return;
+            }
+            
+            container.innerHTML = agents.map(agent => `
+                <div class="agent-card ${selectedAgent?.id === agent.id ? 'active' : ''}" 
+                     onclick="selectAgent('${agent.id}')">
+                    <div class="agent-header">
+                        <div class="agent-avatar">${agent.name[0]}</div>
+                        <div class="agent-info">
+                            <h3>${agent.name}</h3>
+                            <div class="location">📍 ${getLocationName(agent.location)}</div>
+                        </div>
+                    </div>
+                    <div class="agent-stats-row">
+                        <div class="agent-stat">
+                            <span>武力</span>
+                            <span class="agent-stat-value">${agent.stats.strength}</span>
+                        </div>
+                        <div class="agent-stat">
+                            <span>智力</span>
+                            <span class="agent-stat-value">${agent.stats.intelligence}</span>
+                        </div>
+                        <div class="agent-stat">
+                            <span>兵力</span>
+                            <span class="agent-stat-value">${agent.soldiers || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染地图
+        function renderMap() {
+            const container = document.getElementById('map-container');
+            const nodes = world?.nodes || {};
+            
+            // 清除旧节点（保留网格）
+            const oldNodes = container.querySelectorAll('.map-node, .connection-line');
+            oldNodes.forEach(n => n.remove());
+            
+            // 计算节点位置（根据时期不同）
+            const positions = getNodePositions(currentEra);
+            
+            // 绘制连接线
+            for (const [nodeId, node] of Object.entries(nodes)) {
+                if (node.connections) {
+                    for (const connId of node.connections) {
+                        drawConnection(nodeId, connId, positions);
+                    }
+                }
+            }
+            
+            // 绘制节点
+            for (const [nodeId, node] of Object.entries(nodes)) {
+                const pos = positions[nodeId];
+                if (!pos) continue;
+                
+                const faction = node.controller || 'neutral';
+                const agentCount = node.agents?.length || 0;
+                
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'map-node';
+                nodeEl.style.left = pos.x + '%';
+                nodeEl.style.top = pos.y + '%';
+                
+                nodeEl.innerHTML = `
+                    <div class="node-core ${faction}">
+                        <div class="node-pulse"></div>
+                        <div class="node-name">${node.name}</div>
+                        <div class="node-agents">${agentCount} 位 Agent</div>
+                    </div>
+                `;
+                
+                container.appendChild(nodeEl);
+            }
+        }
+
+        // 获取节点位置（根据时期）
+        function getNodePositions(era) {
+            const positions = {
+                sanguo: {
+                    xuchang: { x: 50, y: 35 },
+                    luoyang: { x: 40, y: 25 },
+                    xuzhou: { x: 70, y: 40 },
+                    shouchun: { x: 65, y: 55 },
+                    changsan: { x: 25, y: 65 }
+                },
+                zhanguo: {
+                    xianyang: { x: 35, y: 40 },
+                    handan: { x: 55, y: 25 },
+                    linzi: { x: 75, y: 35 },
+                    xinzheng: { x: 50, y: 50 },
+                    daliang: { x: 60, y: 45 },
+                    yanying: { x: 45, y: 70 }
+                },
+                chuhan: {
+                    pengcheng: { x: 65, y: 35 },
+                    guanzhong: { x: 30, y: 40 },
+                    xianyang: { x: 35, y: 55 },
+                    hanzhong: { x: 20, y: 60 },
+                    xiapi: { x: 70, y: 50 }
+                }
+            };
+            return positions[era] || positions.sanguo;
+        }
+
+        // 绘制连接线
+        function drawConnection(from, to, positions) {
+            const fromPos = positions[from];
+            const toPos = positions[to];
+            if (!fromPos || !toPos) return;
+            
+            const container = document.getElementById('map-container');
+            const line = document.createElement('div');
+            line.className = 'connection-line';
+            
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            line.style.width = length + '%';
+            line.style.left = fromPos.x + '%';
+            line.style.top = fromPos.y + '%';
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            container.appendChild(line);
+        }
+
+        // 选择 Agent
+        function selectAgent(agentId) {
+            selectedAgent = agents.find(a => a.id === agentId);
+            renderAgentList();
+            renderAgentDetail();
+        }
+
+        // 渲染 Agent 详情
+        function renderAgentDetail() {
+            const panel = document.getElementById('agent-detail');
+            
+            if (!selectedAgent) {
+                panel.classList.remove('show');
+                return;
+            }
+            
+            const stats = selectedAgent.stats;
+            
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-avatar">${selectedAgent.name[0]}</div>
+                    <div class="detail-title">
+                        <h2>${selectedAgent.name}</h2>
+                        <div class="faction">${selectedAgent.faction || '无势力'} · Lv.${selectedAgent.level}</div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">武力 ${stats.strength}</div>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${stats.strength}%"></div></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">智力 ${stats.intelligence}</div>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${stats.intelligence}%"></div></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">魅力 ${stats.charisma}</div>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${stats.charisma}%"></div></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">政治 ${stats.politics}</div>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${stats.politics}%"></div></div>
+                    </div>
+                </div>
+                
+                <div class="log-section">
+                    <div class="log-title">最近活动</div>
+                    <div class="log-entry">位于 ${getLocationName(selectedAgent.location)}</div>
+                    <div class="log-entry">状态: ${selectedAgent.status}</div>
+                </div>
+            `;
+            
+            panel.classList.add('show');
+        }
+
+        // 添加活动
+        function addActivity(type, data) {
+            const container = document.getElementById('activity-stream');
+            
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            
+            let content = '';
+            switch (type) {
+                case 'event':
+                    content = `
+                        <div class="activity-time">世界事件</div>
+                        <div class="activity-content">
+                            <strong>${data.name}</strong>: ${data.description}
+                        </div>
+                    `;
+                    break;
+                case 'battle':
+                    content = `
+                        <div class="activity-time">战斗回合</div>
+                        <div class="activity-content">${data.result?.description || '战斗进行中...'}</div>
+                    `;
+                    break;
+                default:
+                    content = `<div class="activity-content">${JSON.stringify(data)}</div>`;
+            }
+            
+            item.innerHTML = content;
+            container.insertBefore(item, container.firstChild);
+            
+            // 限制数量
+            while (container.children.length > 50) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // 发送命令
+        function sendCommand() {
+            const input = document.getElementById('command-input');
+            const command = input.value.trim();
+            
+            if (!command || !selectedAgent) {
+                alert('请先选择一个 Agent 并输入命令');
+                return;
+            }
+            
+            // 发送建议
+            ws.send(JSON.stringify({
+                type: 'observer_command',
+                agentId: selectedAgent.id,
+                suggestion: command
+            }));
+            
+            addActivity('diplomacy', { description: `你向 ${selectedAgent.name} 建议: ${command}` });
+            input.value = '';
+        }
+
+        // 处理按键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendCommand();
+            }
+        }
+
+        // 切换时期
+        function switchEra() {
+            const select = document.getElementById('era-select');
+            const eraId = select.value;
+            
+            fetch(`${API_URL}/api/eras/switch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eraId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`已切换到: ${data.era.name}`);
+                    location.reload();
+                }
+            })
+            .catch(e => console.error('Switch era failed:', e));
+        }
+
+        // 获取地点名称
+        function getLocationName(locationId) {
+            const names = {
+                // 三国
+                xuchang: '许昌', luoyang: '洛阳', xuzhou: '徐州',
+                shouchun: '寿春', changsan: '长沙',
+                // 战国
+                xianyang: '咸阳', handan: '邯郸', linzi: '临淄',
+                xinzheng: '新郑', daliang: '大梁', yanying: '郢都',
+                // 楚汉
+                pengcheng: '彭城', guanzhong: '关中', hanzhong: '汉中', xiapi: '下邳'
+            };
+            return names[locationId] || locationId;
+        }
+
+        // 初始化
+        initStars();
+        connect();
+
+        // 定期获取数据
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/agents`);
+                const data = await res.json();
+                if (data.success) {
+                    agents = data.data;
+                    renderAgentList();
+                }
+            } catch (e) {
+                console.error('Fetch error:', e);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
